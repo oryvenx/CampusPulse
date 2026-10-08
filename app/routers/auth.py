@@ -23,9 +23,8 @@ def login(body: LoginRequest) -> dict:
 
 @router.get("/me")
 def me(user: dict = Depends(auth_service.current_user)) -> dict:
-    """Return the current user's claims."""
     return {
-        "username": user.get("cognito:username") or user.get("username") or user.get("sub"),
+        "username": user.get("email") or user.get("cognito:username") or user.get("sub"),
         "email": user.get("email"),
         "name": user.get("name"),
         "groups": user.get("cognito:groups") or [],
