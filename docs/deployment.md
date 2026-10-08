@@ -1,6 +1,3 @@
-
-### Step 1.6 — Empty `__init__.py` files
-
 Create empty files so Python treats folders as packages:
 
 ```bash
