@@ -1,13 +1,3 @@
-"""
-Campus event simulator.
-
-Usage:
-    python -m simulator.generate_events               # send 20 events once
-    python -m simulator.generate_events --count 100   # send 100 events
-    python -m simulator.generate_events --loop 5      # loop every 5 seconds
-    python -m simulator.generate_events --dry-run     # print, don't send
-"""
-
 import argparse
 import json
 import random
