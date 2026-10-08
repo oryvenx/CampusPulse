@@ -1,7 +1,3 @@
-"""
-Central configuration.
-"""
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,10 +14,8 @@ class Settings(BaseSettings):
     cognito_client_id: str = ""
     cognito_region: str = "eu-west-3"
 
-    # Sensor API key, set via env on EC2
     sensor_api_key: str = ""
 
-    # CloudWatch log group 
     log_group: str = "/campuspulse/api"
 
 
