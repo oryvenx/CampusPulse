@@ -100,21 +100,17 @@ def list_alerts(
             "alert_reason": reason,
         })
 
-    # Sort: critical first, then newest first
-    alerts.sort(
-        key=lambda a: (
-            0 if a["alert_severity"] == "critical" else 1,
-            # ISO timestamps sort lexically
-            a["timestamp"],
-        ),
-        reverse=False,
-    )
-    # Reverse within each severity bucket so newest comes first
     criticals = [a for a in alerts if a["alert_severity"] == "critical"]
-    warnings = [a for a in alerts if a["alert_severity"] == "warning"]
+    warnings  = [a for a in alerts if a["alert_severity"] == "warning"]
     criticals.sort(key=lambda a: a["timestamp"], reverse=True)
     warnings.sort(key=lambda a: a["timestamp"], reverse=True)
     ordered = criticals + warnings
+
+    by_building: dict[str, dict[str, int]] = {}
+    for a in alerts:
+        b = a["building"]
+        bucket = by_building.setdefault(b, {"critical": 0, "warning": 0})
+        bucket[a["alert_severity"]] += 1
 
     return {
         "count": len(ordered),
