@@ -3,6 +3,12 @@
 # Also routes /api/* to the EC2 backend (same origin → no CORS)
 # ------------------------------------------------------------------
 
+locals {
+  # CloudFront requires a DNS name, not an IP address.
+  # Derive the EC2's auto-assigned public DNS from the Elastic IP.
+  ec2_public_dns = "ec2-${replace(aws_eip.api.public_ip, ".", "-")}.${var.aws_region}.compute.amazonaws.com"
+}
+
 resource "random_id" "frontend_suffix" {
   byte_length = 4
 }
@@ -54,13 +60,13 @@ resource "aws_cloudfront_distribution" "frontend" {
 
   # ---------- Origin 2: EC2 (FastAPI) ----------
   origin {
-    domain_name = aws_eip.api.public_ip
+    domain_name = local.ec2_public_dns
     origin_id   = "ec2-api"
 
     custom_origin_config {
       http_port              = 8000
       https_port             = 443
-      origin_protocol_policy = "http-only"      # EC2 has no TLS; CloudFront→EC2 is over HTTP
+      origin_protocol_policy = "http-only" # EC2 has no TLS; CloudFront→EC2 is over HTTP
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
