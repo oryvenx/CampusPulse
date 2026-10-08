@@ -28,3 +28,15 @@ output "cognito_client_id" {
 output "cloudwatch_log_group" {
   value = aws_cloudwatch_log_group.api.name
 }
+
+output "frontend_bucket" {
+  value = aws_s3_bucket.frontend.bucket
+}
+
+output "cloudfront_distribution_id" {
+  value = aws_cloudfront_distribution.frontend.id
+}
+
+output "cloudfront_url" {
+  value = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+}
