@@ -1,3 +1,4 @@
+import os
 import argparse
 import json
 import random
@@ -11,7 +12,7 @@ from app.models.campus import CAMPUS_LAYOUT, THRESHOLDS
 
 
 API_URL_DEFAULT = "http://localhost:8000/events"
-
+SENSOR_API_KEY = os.environ.get("SENSOR_API_KEY", "")
 
 # ---------- value generators per event type ----------
 
@@ -111,8 +112,11 @@ def build_event() -> dict:
 
 
 def send_event(client: httpx.Client, url: str, event: dict) -> None:
+    headers = {}
+    if SENSOR_API_KEY:
+        headers["X-Sensor-Api-Key"] = SENSOR_API_KEY
     try:
-        r = client.post(url, json=event, timeout=5.0)
+        r = client.post(url, json=event, headers=headers, timeout=5.0)
         tag = "OK " if r.status_code < 300 else "ERR"
         print(f"[{tag} {r.status_code}] {event['event_type']:<17} "
               f"{event['building']}/{event['room']} = {event['value']} {event['unit']} "
