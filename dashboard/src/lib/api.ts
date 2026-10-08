@@ -1,6 +1,7 @@
 // Thin fetch wrapper. Auto-attaches JWT from auth storage.
 
 const TOKEN_KEY = "cp_access_token";
+const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 export function getToken(): string | null {
   return sessionStorage.getItem(TOKEN_KEY);
@@ -32,7 +33,7 @@ export async function apiFetch<T>(
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(path, { ...opts, headers });
+  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   const text = await res.text();
   const data = text ? safeJson(text) : null;
 
