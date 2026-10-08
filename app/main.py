@@ -5,7 +5,7 @@ CampusPulse 2026 — FastAPI entrypoint.
 from fastapi import FastAPI
 
 from app.config import settings
-from app.routers import auth, events
+from app.routers import auth, events, alerts
 
 
 app = FastAPI(
@@ -15,6 +15,7 @@ app = FastAPI(
 )
 
 app.include_router(auth.router)
+app.include_router(alerts.router)
 app.include_router(events.router)
 
 
