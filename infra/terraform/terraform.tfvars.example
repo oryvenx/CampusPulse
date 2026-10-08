@@ -1,0 +1,8 @@
+aws_region      = "eu-west-3"
+project_name    = "campuspulse"
+environment     = "dev"
+admin_cidr      = "1.2.3.4/32"                 # ← your IP
+instance_type   = "t3.micro"
+key_pair_name   = "campuspulse-key"            # ← EC2 key pair name
+github_repo_url = "https://github.com/USERNAME/CampusPulse.git"
+sensor_api_key  = "REPLACE_WITH_RANDOM_32_CHARS"
