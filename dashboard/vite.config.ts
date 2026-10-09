@@ -17,4 +17,25 @@ export default defineConfig({
       "/api": { target: API, changeOrigin: true },
     },
   },
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,   // or split chunks properly
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "query-vendor": ["@tanstack/react-query"],
+          "charts-vendor": ["recharts"],
+          "radix-vendor": [
+            "@radix-ui/react-slot",
+            "@radix-ui/react-label",
+            "@radix-ui/react-select",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+          ],
+        },
+      },
+    },
+  },
 });

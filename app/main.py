@@ -32,7 +32,9 @@ app.include_router(events.router, prefix="/api")
 
 DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "dashboard"
 if DASHBOARD_DIR.exists() and (DASHBOARD_DIR / "dist").exists():
-    app.mount("/static", StaticFiles(directory=str(DASHBOARD_DIR / "dist")), name="static")
+    app.mount(
+        "/static", StaticFiles(directory=str(DASHBOARD_DIR / "dist")), name="static"
+    )
 
     @app.get("/", include_in_schema=False)
     def dashboard_index():

@@ -4,7 +4,7 @@
 
 CampusPulse ingests simulated IoT events (occupancy, energy, temperature, humidity, equipment failures, service requests) from buildings across campus, stores them in Amazon DynamoDB, evaluates operational thresholds server-side, and exposes a staff/student dashboard and REST API. All running on real AWS services in **`eu-west-3` (Paris)**.
 
-> Built as the final project for the Cloud Computing course (2026 S2).  
+> Built as the final project for the Cloud Computing course (2026 S2).
 > Architecture, implementation, and deployment are fully infrastructure-as-code.
 
 ---
@@ -462,7 +462,7 @@ Every request produces a JSON line:
  "timestamp":"2026-10-09T08:19:55.165867Z","logger":"access"}
 ```
 
-Locally: `journalctl -u campuspulse -f`  
+Locally: `journalctl -u campuspulse -f`
 Remotely: **CloudWatch Logs** → `/campuspulse/api`
 
 ### Metrics & alarms

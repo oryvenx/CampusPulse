@@ -23,12 +23,12 @@ CAMPUS_LAYOUT = {
 
 # Thresholds used by the alert engine (Task 6)
 THRESHOLDS = {
-    "occupancy_pct_warning": 0.80,    # >=80% full => warning
-    "occupancy_pct_critical": 1.00,   # over capacity  => critical
+    "occupancy_pct_warning": 0.80,  # >=80% full => warning
+    "occupancy_pct_critical": 1.00,  # over capacity  => critical
     "temperature_c_warning": 28.0,
     "temperature_c_critical": 32.0,
     "humidity_pct_warning": 70.0,
-    "energy_kwh_warning": 50.0,       # per reading
+    "energy_kwh_warning": 50.0,  # per reading
     "energy_kwh_critical": 80.0,
 }
 

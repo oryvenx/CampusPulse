@@ -30,7 +30,8 @@ def configure_logging(level: str = "INFO") -> None:
     ]
 
     structlog.configure(
-        processors=shared_processors + [
+        processors=shared_processors
+        + [
             structlog.processors.format_exc_info,
             structlog.processors.JSONRenderer(),
         ],

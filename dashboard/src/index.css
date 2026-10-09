@@ -29,7 +29,9 @@
   html {
     color-scheme: dark;
   }
-  html, body, #root {
+  html,
+  body,
+  #root {
     min-height: 100%;
   }
 
@@ -57,6 +59,10 @@
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

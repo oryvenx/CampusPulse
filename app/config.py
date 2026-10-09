@@ -36,6 +36,7 @@ class Settings(BaseSettings):
             return
         try:
             import boto3
+
             ssm = boto3.client("ssm", region_name=self.aws_region)
             self.sensor_api_key = ssm.get_parameter(
                 Name="/campuspulse/sensor_api_key",

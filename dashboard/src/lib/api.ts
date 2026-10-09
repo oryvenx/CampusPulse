@@ -24,7 +24,7 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(
   path: string,
-  opts: RequestInit = {}
+  opts: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(opts.headers);
   if (!headers.has("Content-Type") && opts.body) {
@@ -39,7 +39,7 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const detail =
-      (data && typeof data === "object" && "detail" in data)
+      data && typeof data === "object" && "detail" in data
         ? (data as { detail: unknown }).detail
         : data;
     throw new ApiError(res.status, detail, `HTTP ${res.status}`);
