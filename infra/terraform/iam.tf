@@ -125,7 +125,111 @@ resource "aws_iam_role_policy_attachment" "ec2_attach" {
   policy_arn = aws_iam_policy.ec2_policy.arn
 }
 
+# AWS-managed policy: required for SSM agent on the instance
+resource "aws_iam_role_policy_attachment" "ec2_ssm_core" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.project_name}-ec2-profile"
   role = aws_iam_role.ec2_role.name
+}
+
+# ------------------------------------------------------------------
+# GitHub Actions deploy user (scoped, not admin)
+# ------------------------------------------------------------------
+
+resource "aws_iam_user" "gha_deployer" {
+  name = "${var.project_name}-gha-deployer"
+
+  tags = { Name = "${var.project_name}-gha-deployer" }
+}
+
+data "aws_iam_policy_document" "gha_deployer" {
+  # --- SSM Run Command: send + read result, but only against our instance ---
+  statement {
+    sid    = "SSMSendCommand"
+    effect = "Allow"
+    actions = [
+      "ssm:SendCommand",
+    ]
+    resources = [
+      "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/${aws_instance.api.id}",
+      "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
+    ]
+  }
+
+  statement {
+    sid    = "SSMReadCommandResult"
+    effect = "Allow"
+    actions = [
+      "ssm:GetCommandInvocation",
+      "ssm:ListCommandInvocations",
+      "ssm:ListCommands",
+    ]
+    resources = ["*"]
+  }
+
+  # --- S3: sync the SPA (upload + delete for --delete flag) ---
+  statement {
+    sid    = "S3SyncFrontend"
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:GetObject",
+    ]
+    resources = [
+      "${aws_s3_bucket.frontend.arn}/*",
+    ]
+  }
+
+  statement {
+    sid       = "S3ListFrontendBucket"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.frontend.arn]
+  }
+
+  # --- CloudFront: invalidate the SPA cache after deploy ---
+  statement {
+    sid    = "CloudFrontInvalidate"
+    effect = "Allow"
+    actions = [
+      "cloudfront:CreateInvalidation",
+      "cloudfront:GetInvalidation",
+    ]
+    resources = [
+      "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend.id}",
+    ]
+  }
+
+  # --- Read Terraform outputs during CI (optional, for /campuspulse/* lookups) ---
+  statement {
+    sid    = "SSMReadDeployParams"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "gha_deployer" {
+  name   = "${var.project_name}-gha-deployer-policy"
+  policy = data.aws_iam_policy_document.gha_deployer.json
+}
+
+resource "aws_iam_user_policy_attachment" "gha_deployer" {
+  user       = aws_iam_user.gha_deployer.name
+  policy_arn = aws_iam_policy.gha_deployer.arn
+}
+
+# Programmatic access key for GitHub Actions
+resource "aws_iam_access_key" "gha_deployer" {
+  user = aws_iam_user.gha_deployer.name
 }
