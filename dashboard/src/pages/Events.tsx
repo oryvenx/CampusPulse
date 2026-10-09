@@ -38,9 +38,7 @@ export function Events() {
     <div className="p-8 space-y-6 max-w-6xl mx-auto">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Events</h1>
-        <p className="text-sm text-muted-foreground">
-          Live feed of all campus events (last 100).
-        </p>
+        <p className="text-sm text-muted-foreground">Live feed of all campus events (last 100).</p>
       </header>
 
       <Card>
@@ -78,9 +76,7 @@ export function Events() {
               ))}
             </div>
           ) : items.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-10">
-              No events.
-            </div>
+            <div className="text-sm text-muted-foreground text-center py-10">No events.</div>
           ) : (
             <Table>
               <TableHeader>

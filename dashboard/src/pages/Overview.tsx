@@ -46,17 +46,15 @@ export function Overview() {
   const buildings = Object.keys(stats.data?.buildings ?? {});
 
   // Energy chart data
-  const energyData = Object.entries(stats.data?.buildings ?? {}).map(
-    ([name, s]) => ({ name, energy: Number(s.energy_total_kwh.toFixed(1)) }),
-  );
+  const energyData = Object.entries(stats.data?.buildings ?? {}).map(([name, s]) => ({
+    name,
+    energy: Number(s.energy_total_kwh.toFixed(1)),
+  }));
 
   // Alerts-over-time: bucket by minute
   const alertSeries = (() => {
     const items: AlertItem[] = alerts.data?.items ?? [];
-    const buckets: Record<
-      string,
-      { time: string; warning: number; critical: number }
-    > = {};
+    const buckets: Record<string, { time: string; warning: number; critical: number }> = {};
     for (const a of items) {
       const d = new Date(a.timestamp);
       const key = `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -193,20 +191,14 @@ export function Overview() {
             <CardTitle>Active alerts</CardTitle>
           </CardHeader>
           <CardContent>
-            <AlertsTable
-              loading={alerts.isLoading}
-              items={alerts.data?.items ?? []}
-            />
+            <AlertsTable loading={alerts.isLoading} items={alerts.data?.items ?? []} />
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardContent className="py-6 text-sm text-muted-foreground">
             Alerts are visible to staff only. You are signed in with role{" "}
-            <span className="font-mono">
-              {user?.groups.join(", ") || "unknown"}
-            </span>
-            .
+            <span className="font-mono">{user?.groups.join(", ") || "unknown"}</span>.
           </CardContent>
         </Card>
       )}
@@ -248,13 +240,7 @@ function MetricCard({
   );
 }
 
-function AlertsTable({
-  items,
-  loading,
-}: {
-  items: AlertItem[];
-  loading: boolean;
-}) {
+function AlertsTable({ items, loading }: { items: AlertItem[]; loading: boolean }) {
   if (loading) {
     return (
       <div className="space-y-2">
@@ -266,9 +252,7 @@ function AlertsTable({
   }
   if (items.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground py-6 text-center">
-        No active alerts. 🌿
-      </div>
+      <div className="text-sm text-muted-foreground py-6 text-center">No active alerts. 🌿</div>
     );
   }
   return (
@@ -291,9 +275,7 @@ function AlertsTable({
               {a.building}/{a.room}
             </TableCell>
             <TableCell className="text-sm">{a.event_type}</TableCell>
-            <TableCell className="text-sm text-muted-foreground">
-              {a.alert_reason}
-            </TableCell>
+            <TableCell className="text-sm text-muted-foreground">{a.alert_reason}</TableCell>
           </TableRow>
         ))}
       </TableBody>

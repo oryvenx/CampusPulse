@@ -25,10 +25,7 @@ export function Alerts() {
 
   const query = useQuery({
     queryKey: ["alerts", sev, user?.username],
-    queryFn: () =>
-      apiFetch<AlertsResponse>(
-        sev === "all" ? "/alerts" : `/alerts?severity=${sev}`,
-      ),
+    queryFn: () => apiFetch<AlertsResponse>(sev === "all" ? "/alerts" : `/alerts?severity=${sev}`),
     refetchInterval: 15_000,
     enabled: hasRole("staff"),
   });
@@ -43,10 +40,7 @@ export function Alerts() {
               <h2 className="font-semibold">Access restricted</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Alerts are visible to staff only. You are signed in as{" "}
-                <span className="font-mono">
-                  {user?.groups.join(", ") || "unknown"}
-                </span>
-                .
+                <span className="font-mono">{user?.groups.join(", ") || "unknown"}</span>.
               </p>
             </div>
           </CardContent>
@@ -92,11 +86,7 @@ export function Alerts() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat
-          title="Total"
-          value={query.data?.count}
-          loading={query.isLoading}
-        />
+        <Stat title="Total" value={query.data?.count} loading={query.isLoading} />
         <Stat
           title="Critical"
           value={query.data?.critical_count}
@@ -142,17 +132,13 @@ export function Alerts() {
                 {items.map((a) => (
                   <TableRow key={a.event_id}>
                     <TableCell>
-                      <Badge variant={a.alert_severity}>
-                        {a.alert_severity}
-                      </Badge>
+                      <Badge variant={a.alert_severity}>{a.alert_severity}</Badge>
                     </TableCell>
                     <TableCell className="font-mono text-xs">
                       {a.building}/{a.room}
                     </TableCell>
                     <TableCell>{a.event_type}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {a.alert_reason}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground">{a.alert_reason}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {a.value} {a.unit}
                     </TableCell>
@@ -181,12 +167,7 @@ function Stat({
   loading?: boolean;
   accent?: "critical" | "warning";
 }) {
-  const cls =
-    accent === "critical"
-      ? "text-red-400"
-      : accent === "warning"
-        ? "text-amber-400"
-        : "";
+  const cls = accent === "critical" ? "text-red-400" : accent === "warning" ? "text-amber-400" : "";
   return (
     <Card>
       <CardContent className="p-5">

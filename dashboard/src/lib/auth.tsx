@@ -43,10 +43,7 @@ function userFromIdToken(idToken: string): AuthUser {
   const p = decodeJwtPayload(idToken) || {};
   return {
     username:
-      (p.email as string) ||
-      (p["cognito:username"] as string) ||
-      (p.sub as string) ||
-      "user",
+      (p.email as string) || (p["cognito:username"] as string) || (p.sub as string) || "user",
     email: (p.email as string) ?? null,
     name: (p.name as string) ?? null,
     groups: (p["cognito:groups"] as string[]) || [],
@@ -84,14 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.clear();
   }, [queryClient]);
 
-  const hasRole = useCallback(
-    (role: string) => !!user?.groups.includes(role),
-    [user],
-  );
+  const hasRole = useCallback((role: string) => !!user?.groups.includes(role), [user]);
 
   const value = useMemo<AuthState>(
     () => ({ user, loading, login, logout, hasRole }),
-    [user, loading, login, logout, hasRole],
+    [user, loading, login, logout, hasRole]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

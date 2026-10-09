@@ -50,12 +50,8 @@ export function Login() {
               <University className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">
-                CampusPulse 2026
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Smart Campus Operations Platform
-              </p>
+              <h1 className="text-xl font-semibold tracking-tight">CampusPulse 2026</h1>
+              <p className="text-xs text-muted-foreground">Smart Campus Operations Platform</p>
             </div>
           </div>
 
@@ -103,12 +99,8 @@ export function Login() {
 
           <div className="mt-6 text-xs text-muted-foreground border-t border-white/10 pt-4">
             <div className="font-medium mb-1">Demo accounts</div>
-            <div className="font-mono">
-              staff1@campuspulse.local / Staff#2026Pass
-            </div>
-            <div className="font-mono">
-              student1@campuspulse.local / Student#2026Pass
-            </div>
+            <div className="font-mono">staff1@campuspulse.local / Staff#2026Pass</div>
+            <div className="font-mono">student1@campuspulse.local / Student#2026Pass</div>
           </div>
         </CardContent>
       </Card>
