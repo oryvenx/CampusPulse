@@ -56,6 +56,7 @@ class CampusEvent(BaseModel):
 
 class EventCreate(BaseModel):
     """Payload accepted by POST /events (event_id and timestamp optional)."""
+
     event_id: Optional[str] = None
     building: str
     room: str

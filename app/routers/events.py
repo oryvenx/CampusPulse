@@ -24,7 +24,11 @@ def _sensor_or_staff(
       - Bearer token whose cognito:groups includes 'staff' (staff UI).
     """
     # Path 1: sensor API key
-    if x_sensor_api_key and settings.sensor_api_key and x_sensor_api_key == settings.sensor_api_key:
+    if (
+        x_sensor_api_key
+        and settings.sensor_api_key
+        and x_sensor_api_key == settings.sensor_api_key
+    ):
         return {"sub": "sensor", "cognito:groups": ["staff"]}
 
     # Path 2: staff JWT

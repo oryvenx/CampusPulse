@@ -34,6 +34,7 @@ def _evaluate(event: dict) -> tuple[bool, Optional[str], Optional[str]]:
     if et == "occupancy":
         # value is people; we need capacity to compute %
         from app.models.campus import CAMPUS_LAYOUT
+
         capacity = (
             CAMPUS_LAYOUT.get(event["building"], {})
             .get("capacity", {})
@@ -43,28 +44,52 @@ def _evaluate(event: dict) -> tuple[bool, Optional[str], Optional[str]]:
             return False, None, None
         pct = value / capacity
         if pct >= THRESHOLDS["occupancy_pct_critical"]:
-            return True, "critical", f"occupancy {value}/{capacity} ({pct:.0%}) over capacity"
+            return (
+                True,
+                "critical",
+                f"occupancy {value}/{capacity} ({pct:.0%}) over capacity",
+            )
         if pct >= THRESHOLDS["occupancy_pct_warning"]:
             return True, "warning", f"occupancy {value}/{capacity} ({pct:.0%}) ≥80%"
         return False, None, None
 
     if et == "temperature":
         if value >= THRESHOLDS["temperature_c_critical"]:
-            return True, "critical", f"temperature {value}°C ≥ {THRESHOLDS['temperature_c_critical']}°C"
+            return (
+                True,
+                "critical",
+                f"temperature {value}°C ≥ {THRESHOLDS['temperature_c_critical']}°C",
+            )
         if value >= THRESHOLDS["temperature_c_warning"]:
-            return True, "warning", f"temperature {value}°C ≥ {THRESHOLDS['temperature_c_warning']}°C"
+            return (
+                True,
+                "warning",
+                f"temperature {value}°C ≥ {THRESHOLDS['temperature_c_warning']}°C",
+            )
         return False, None, None
 
     if et == "humidity":
         if value >= THRESHOLDS["humidity_pct_warning"]:
-            return True, "warning", f"humidity {value}% ≥ {THRESHOLDS['humidity_pct_warning']}%"
+            return (
+                True,
+                "warning",
+                f"humidity {value}% ≥ {THRESHOLDS['humidity_pct_warning']}%",
+            )
         return False, None, None
 
     if et == "energy":
         if value >= THRESHOLDS["energy_kwh_critical"]:
-            return True, "critical", f"energy {value} kWh ≥ {THRESHOLDS['energy_kwh_critical']} kWh"
+            return (
+                True,
+                "critical",
+                f"energy {value} kWh ≥ {THRESHOLDS['energy_kwh_critical']} kWh",
+            )
         if value >= THRESHOLDS["energy_kwh_warning"]:
-            return True, "warning", f"energy {value} kWh ≥ {THRESHOLDS['energy_kwh_warning']} kWh"
+            return (
+                True,
+                "warning",
+                f"energy {value} kWh ≥ {THRESHOLDS['energy_kwh_warning']} kWh",
+            )
         return False, None, None
 
     if et in ("equipment_failure", "service_request"):
@@ -94,14 +119,16 @@ def list_alerts(
             continue
         if severity and sev != severity:
             continue
-        alerts.append({
-            **e,
-            "alert_severity": sev,
-            "alert_reason": reason,
-        })
+        alerts.append(
+            {
+                **e,
+                "alert_severity": sev,
+                "alert_reason": reason,
+            }
+        )
 
     criticals = [a for a in alerts if a["alert_severity"] == "critical"]
-    warnings  = [a for a in alerts if a["alert_severity"] == "warning"]
+    warnings = [a for a in alerts if a["alert_severity"] == "warning"]
     criticals.sort(key=lambda a: a["timestamp"], reverse=True)
     warnings.sort(key=lambda a: a["timestamp"], reverse=True)
     ordered = criticals + warnings

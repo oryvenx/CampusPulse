@@ -126,6 +126,7 @@ def current_user(
 
 def require_role(*allowed_roles: str):
     """Dependency factory: only allow users whose cognito:groups intersect allowed_roles."""
+
     def _checker(user: dict = Depends(current_user)) -> dict:
         groups = user.get("cognito:groups") or []
         if not any(r in groups for r in allowed_roles):
@@ -134,4 +135,5 @@ def require_role(*allowed_roles: str):
                 detail=f"Requires one of roles: {list(allowed_roles)}",
             )
         return user
+
     return _checker

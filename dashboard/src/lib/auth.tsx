@@ -86,12 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = useCallback(
     (role: string) => !!user?.groups.includes(role),
-    [user]
+    [user],
   );
 
   const value = useMemo<AuthState>(
     () => ({ user, loading, login, logout, hasRole }),
-    [user, loading, login, logout, hasRole]
+    [user, loading, login, logout, hasRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

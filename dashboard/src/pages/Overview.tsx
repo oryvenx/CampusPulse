@@ -1,10 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  AlertTriangle,
-  BellRing,
-  Building2,
-} from "lucide-react";
+import { Activity, AlertTriangle, BellRing, Building2 } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -30,22 +25,16 @@ import {
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import type {
-  AlertsResponse,
-  AlertItem,
-  StatsResponse,
-} from "@/lib/types";
+import type { AlertsResponse, AlertItem, StatsResponse } from "@/lib/types";
 
 export function Overview() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
 
   const stats = useQuery({
     queryKey: ["stats"],
     queryFn: () => apiFetch<StatsResponse>("/stats"),
     refetchInterval: 15_000,
   });
-
-  const { user } = useAuth();
 
   const alerts = useQuery({
     queryKey: ["alerts", user?.username],
@@ -58,13 +47,16 @@ export function Overview() {
 
   // Energy chart data
   const energyData = Object.entries(stats.data?.buildings ?? {}).map(
-    ([name, s]) => ({ name, energy: Number(s.energy_total_kwh.toFixed(1)) })
+    ([name, s]) => ({ name, energy: Number(s.energy_total_kwh.toFixed(1)) }),
   );
 
   // Alerts-over-time: bucket by minute
   const alertSeries = (() => {
     const items: AlertItem[] = alerts.data?.items ?? [];
-    const buckets: Record<string, { time: string; warning: number; critical: number }> = {};
+    const buckets: Record<
+      string,
+      { time: string; warning: number; critical: number }
+    > = {};
     for (const a of items) {
       const d = new Date(a.timestamp);
       const key = `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -121,14 +113,14 @@ export function Overview() {
           </CardHeader>
           <CardContent className="h-72">
             {!hasRole("staff") ? (
-                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                    Alerts are visible to staff only.
-                </div>
-                ) : alertSeries.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                    No alerts yet.
-                </div>
-                ) : (
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                Alerts are visible to staff only.
+              </div>
+            ) : alertSeries.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                No alerts yet.
+              </div>
+            ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={alertSeries}>
                   <CartesianGrid strokeOpacity={0.1} />
@@ -201,7 +193,10 @@ export function Overview() {
             <CardTitle>Active alerts</CardTitle>
           </CardHeader>
           <CardContent>
-            <AlertsTable loading={alerts.isLoading} items={alerts.data?.items ?? []} />
+            <AlertsTable
+              loading={alerts.isLoading}
+              items={alerts.data?.items ?? []}
+            />
           </CardContent>
         </Card>
       ) : (
@@ -209,7 +204,7 @@ export function Overview() {
           <CardContent className="py-6 text-sm text-muted-foreground">
             Alerts are visible to staff only. You are signed in with role{" "}
             <span className="font-mono">
-              {useAuth().user?.groups.join(", ") || "unknown"}
+              {user?.groups.join(", ") || "unknown"}
             </span>
             .
           </CardContent>
@@ -236,8 +231,8 @@ function MetricCard({
     accent === "critical"
       ? "text-red-400"
       : accent === "warning"
-      ? "text-amber-400"
-      : "text-foreground";
+        ? "text-amber-400"
+        : "text-foreground";
   return (
     <Card>
       <CardContent className="p-6">
@@ -246,7 +241,7 @@ function MetricCard({
           {icon}
         </div>
         <div className={`text-3xl font-semibold mt-2 ${accentClass}`}>
-          {loading ? <Skeleton className="h-8 w-16" /> : value ?? 0}
+          {loading ? <Skeleton className="h-8 w-16" /> : (value ?? 0)}
         </div>
       </CardContent>
     </Card>

@@ -16,6 +16,7 @@ SENSOR_API_KEY = os.environ.get("SENSOR_API_KEY", "")
 
 # ---------- value generators per event type ----------
 
+
 def _gen_occupancy(room: str, capacity: int) -> tuple[float, str, str]:
     # Use time of day to make occupancy realistic
     hour = datetime.now(timezone.utc).hour
@@ -73,17 +74,18 @@ def _gen_service_request() -> tuple[float, str, str]:
 
 
 GENERATORS = {
-    "occupancy":         lambda b, r, c: _gen_occupancy(r, c),
-    "temperature":       lambda b, r, c: _gen_temperature(),
-    "humidity":          lambda b, r, c: _gen_humidity(),
-    "energy":            lambda b, r, c: _gen_energy(),
-    "door":              lambda b, r, c: _gen_door(),
+    "occupancy": lambda b, r, c: _gen_occupancy(r, c),
+    "temperature": lambda b, r, c: _gen_temperature(),
+    "humidity": lambda b, r, c: _gen_humidity(),
+    "energy": lambda b, r, c: _gen_energy(),
+    "door": lambda b, r, c: _gen_door(),
     "equipment_failure": lambda b, r, c: _gen_equipment_failure(),
-    "service_request":   lambda b, r, c: _gen_service_request(),
+    "service_request": lambda b, r, c: _gen_service_request(),
 }
 
 
 # ---------- main ----------
+
 
 def build_event() -> dict:
     building = random.choice(list(CAMPUS_LAYOUT.keys()))
@@ -118,9 +120,11 @@ def send_event(client: httpx.Client, url: str, event: dict) -> None:
     try:
         r = client.post(url, json=event, headers=headers, timeout=5.0)
         tag = "OK " if r.status_code < 300 else "ERR"
-        print(f"[{tag} {r.status_code}] {event['event_type']:<17} "
-              f"{event['building']}/{event['room']} = {event['value']} {event['unit']} "
-              f"({event['severity']})")
+        print(
+            f"[{tag} {r.status_code}] {event['event_type']:<17} "
+            f"{event['building']}/{event['room']} = {event['value']} {event['unit']} "
+            f"({event['severity']})"
+        )
     except Exception as e:
         print(f"[ERR] {e} — event={json.dumps(event)}")
 
@@ -147,14 +151,23 @@ def run(count: int, loop: int | None, url: str, dry_run: bool) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CampusPulse event simulator")
-    parser.add_argument("--count", type=int, default=20,
-                        help="Number of events to send (default 20)")
-    parser.add_argument("--loop", type=int, default=None,
-                        help="If set, loop forever sending 1 event every N seconds")
-    parser.add_argument("--url", default=API_URL_DEFAULT,
-                        help=f"API endpoint (default {API_URL_DEFAULT})")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Print events without sending")
+    parser.add_argument(
+        "--count", type=int, default=20, help="Number of events to send (default 20)"
+    )
+    parser.add_argument(
+        "--loop",
+        type=int,
+        default=None,
+        help="If set, loop forever sending 1 event every N seconds",
+    )
+    parser.add_argument(
+        "--url",
+        default=API_URL_DEFAULT,
+        help=f"API endpoint (default {API_URL_DEFAULT})",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Print events without sending"
+    )
     args = parser.parse_args()
 
     run(args.count, args.loop, args.url, args.dry_run)

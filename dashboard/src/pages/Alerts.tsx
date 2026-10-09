@@ -27,7 +27,7 @@ export function Alerts() {
     queryKey: ["alerts", sev, user?.username],
     queryFn: () =>
       apiFetch<AlertsResponse>(
-        sev === "all" ? "/alerts" : `/alerts?severity=${sev}`
+        sev === "all" ? "/alerts" : `/alerts?severity=${sev}`,
       ),
     refetchInterval: 15_000,
     enabled: hasRole("staff"),
@@ -44,7 +44,7 @@ export function Alerts() {
               <p className="text-sm text-muted-foreground mt-1">
                 Alerts are visible to staff only. You are signed in as{" "}
                 <span className="font-mono">
-                  {useAuth().user?.groups.join(", ") || "unknown"}
+                  {user?.groups.join(", ") || "unknown"}
                 </span>
                 .
               </p>
@@ -92,7 +92,11 @@ export function Alerts() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Stat title="Total" value={query.data?.count} loading={query.isLoading} />
+        <Stat
+          title="Total"
+          value={query.data?.count}
+          loading={query.isLoading}
+        />
         <Stat
           title="Critical"
           value={query.data?.critical_count}
@@ -138,7 +142,9 @@ export function Alerts() {
                 {items.map((a) => (
                   <TableRow key={a.event_id}>
                     <TableCell>
-                      <Badge variant={a.alert_severity}>{a.alert_severity}</Badge>
+                      <Badge variant={a.alert_severity}>
+                        {a.alert_severity}
+                      </Badge>
                     </TableCell>
                     <TableCell className="font-mono text-xs">
                       {a.building}/{a.room}
@@ -179,14 +185,14 @@ function Stat({
     accent === "critical"
       ? "text-red-400"
       : accent === "warning"
-      ? "text-amber-400"
-      : "";
+        ? "text-amber-400"
+        : "";
   return (
     <Card>
       <CardContent className="p-5">
         <div className="text-sm text-muted-foreground">{title}</div>
         <div className={`text-3xl font-semibold mt-1 ${cls}`}>
-          {loading ? <Skeleton className="h-8 w-14" /> : value ?? 0}
+          {loading ? <Skeleton className="h-8 w-14" /> : (value ?? 0)}
         </div>
       </CardContent>
     </Card>
