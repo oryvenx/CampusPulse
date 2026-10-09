@@ -40,8 +40,10 @@ chmod 600 /opt/campuspulse/env
 
 # ---- 6. Log directory ----
 mkdir -p /var/log/campuspulse
-chown ec2-user:ec2-user /var/log/campuspulse
+touch /var/log/campuspulse/app.log
+chown -R ec2-user:ec2-user /var/log/campuspulse
 chmod 755 /var/log/campuspulse
+chmod 644 /var/log/campuspulse/app.log
 
 # ---- 7. systemd unit (writes to file so CloudWatch Agent can tail it) ----
 cat > /etc/systemd/system/campuspulse.service <<'UNIT'

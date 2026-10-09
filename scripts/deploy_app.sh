@@ -53,8 +53,8 @@ echo "── service status ──"
 sudo systemctl status campuspulse --no-pager | head -12
 
 echo
-echo "── /health ──"
-curl -s -m 5 http://127.0.0.1:8000/health || echo "(health check failed)"
+echo "── /api/health ──"
+curl -s -m 5 http://127.0.0.1:8000/api/health || echo "(health check failed)"
 REMOTE
 
 echo
