@@ -5,7 +5,6 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-# Only one deploy at a time; queue others
 concurrency:
   group: deploy-main
   cancel-in-progress: false
@@ -15,10 +14,60 @@ env:
 
 jobs:
   # ----------------------------------------------------------------
-  # Job 1: Backend tests
+  # Job 1: Lint (fast — fails fast)
+  # ----------------------------------------------------------------
+  lint:
+    name: Lint (ruff + terraform + prettier + eslint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install ruff
+        run: pip install ruff==0.6.9
+
+      - name: Ruff (Python lint)
+        run: ruff check app/ tests/ simulator/
+
+      - name: Ruff (Python format check)
+        run: ruff format --check app/ tests/ simulator/
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.7"
+
+      - name: Terraform fmt check
+        working-directory: infra/terraform
+        run: terraform fmt -check -recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dashboard deps
+        working-directory: dashboard
+        run: npm ci
+
+      - name: Prettier format check
+        working-directory: dashboard
+        run: npm run format:check
+
+      - name: ESLint
+        working-directory: dashboard
+        run: npm run lint
+
+  # ----------------------------------------------------------------
+  # Job 2: Backend tests
   # ----------------------------------------------------------------
   test:
     name: Backend tests (pytest)
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,11 +95,11 @@ jobs:
         run: pytest -v
 
   # ----------------------------------------------------------------
-  # Job 2: Deploy backend via SSM Run Command
+  # Job 3: Deploy backend via SSM Run Command
   # ----------------------------------------------------------------
   deploy-backend:
     name: Deploy backend (SSM Run Command)
-    needs: test
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,8 +111,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
-      # Self-healing: resolve the current EC2 instance ID from SSM instead
-      # of relying on a static GitHub secret. Survives EC2 replacements.
       - name: Resolve EC2 instance ID from SSM
         id: instance
         run: |
@@ -94,7 +141,6 @@ jobs:
           set -euo pipefail
           CMD_ID="${{ steps.send.outputs.command_id }}"
           INSTANCE="${{ steps.instance.outputs.id }}"
-
           STATUS="Pending"
           for i in $(seq 1 60); do
             STATUS=$(aws ssm get-command-invocation \
@@ -102,12 +148,10 @@ jobs:
               --command-id "$CMD_ID" \
               --instance-id "$INSTANCE" \
               --query 'Status' --output text 2>/dev/null || echo "Pending")
-
             echo "  [$i/60] status=$STATUS"
             case "$STATUS" in
               Success)
                 echo "✅ deploy succeeded"
-                # Print deploy output for visibility
                 aws ssm get-command-invocation \
                   --region "$AWS_REGION" \
                   --command-id "$CMD_ID" \
@@ -117,33 +161,26 @@ jobs:
                 ;;
               Failed|Cancelled|TimedOut)
                 echo "❌ deploy failed with status=$STATUS"
-                echo "── stdout ──"
                 aws ssm get-command-invocation \
                   --region "$AWS_REGION" \
                   --command-id "$CMD_ID" \
                   --instance-id "$INSTANCE" \
-                  --query 'StandardOutputContent' --output text
-                echo "── stderr ──"
-                aws ssm get-command-invocation \
-                  --region "$AWS_REGION" \
-                  --command-id "$CMD_ID" \
-                  --instance-id "$INSTANCE" \
-                  --query 'StandardErrorContent' --output text
+                  --query '{Std:StandardOutputContent,Err:StandardErrorContent}' \
+                  --output text
                 exit 1
                 ;;
             esac
             sleep 10
           done
-
           echo "❌ SSM command did not reach Success within 10 minutes (last status: $STATUS)"
           exit 1
 
   # ----------------------------------------------------------------
-  # Job 3: Deploy frontend to S3 + invalidate CloudFront
+  # Job 4: Deploy frontend to S3 + invalidate CloudFront
   # ----------------------------------------------------------------
   deploy-frontend:
     name: Deploy frontend (S3 + CloudFront)
-    needs: test
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -178,7 +215,6 @@ jobs:
             --exclude "index.html" \
             --exclude "*.map"
 
-          # index.html must not be cached long
           aws s3 cp dashboard/dist/index.html "s3://${BUCKET}/index.html" \
             --cache-control "public,max-age=60,must-revalidate"
 
