@@ -2,10 +2,12 @@ aws_region      = "eu-west-3"
 project_name    = "campuspulse"
 environment     = "dev"
 
+# Your public IP in CIDR form (SSH access). Get it with: curl -s https://checkip.amazonaws.com
 admin_cidr      = "1.2.3.4/32"
+
 instance_type   = "t3.micro"
 key_pair_name   = "campuspulse-key"
 github_repo_url = "https://github.com/oryvenx/CampusPulse.git"
 
 # Generate with: openssl rand -hex 24
-sensor_api_key  = "REPLACE_WITH_RANDOM_48_HEX_CHARS"
+sensor_api_key  = "REPLACE_WITH_48_HEX_CHARS"
