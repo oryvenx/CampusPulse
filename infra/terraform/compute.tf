@@ -52,16 +52,15 @@ resource "aws_instance" "api" {
   associate_public_ip_address = true
 
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
-    aws_region        = var.aws_region
-    events_table      = aws_dynamodb_table.events.name
-    users_table       = aws_dynamodb_table.users.name
-    cognito_user_pool = aws_cognito_user_pool.main.id
-    cognito_client_id = aws_cognito_user_pool_client.app.id
-    sensor_api_key    = var.sensor_api_key
-    log_group         = aws_cloudwatch_log_group.api.name
-    github_repo_url   = var.github_repo_url
-    project_name      = var.project_name
+    aws_region      = var.aws_region
+    events_table    = aws_dynamodb_table.events.name
+    users_table     = aws_dynamodb_table.users.name
+    log_group       = aws_cloudwatch_log_group.api.name
+    github_repo_url = var.github_repo_url
+    project_name    = var.project_name
   })
+
+  user_data_replace_on_change = true
 
   root_block_device {
     volume_size = 10
