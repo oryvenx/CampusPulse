@@ -12,7 +12,6 @@ from contextvars import ContextVar
 
 import structlog
 
-
 # Per-request id, set by middleware
 request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
 

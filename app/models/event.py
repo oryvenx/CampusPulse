@@ -16,7 +16,7 @@ Matches the schema from Appendix A of the project spec:
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -57,11 +57,11 @@ class CampusEvent(BaseModel):
 class EventCreate(BaseModel):
     """Payload accepted by POST /events (event_id and timestamp optional)."""
 
-    event_id: Optional[str] = None
+    event_id: str | None = None
     building: str
     room: str
     event_type: EventType
     value: float
     unit: str
     severity: Severity = Severity.NORMAL
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None

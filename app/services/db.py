@@ -9,7 +9,6 @@ from boto3.resources.base import ServiceResource
 
 from app.config import settings
 
-
 _resource: ServiceResource | None = None
 
 

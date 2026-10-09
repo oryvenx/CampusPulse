@@ -2,8 +2,6 @@
 /alerts — staff-only alert feed.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 
 from app.services import alert_service, auth_service
@@ -13,8 +11,8 @@ router = APIRouter(tags=["alerts"])
 
 @router.get("/alerts")
 def list_alerts(
-    building: Optional[str] = Query(None),
-    severity: Optional[str] = Query(None, pattern="^(warning|critical)$"),
+    building: str | None = Query(None),
+    severity: str | None = Query(None, pattern="^(warning|critical)$"),
     limit: int = Query(100, ge=1, le=500),
     _user: dict = Depends(auth_service.require_role("staff")),
 ) -> dict:

@@ -12,15 +12,14 @@ misconfigured or malicious clients cannot inject fake "normal" severities.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from app.models.campus import THRESHOLDS
 from app.services import event_service
 
 
 # Which events map to which thresholds
-def _evaluate(event: dict) -> tuple[bool, Optional[str], Optional[str]]:
+def _evaluate(event: dict) -> tuple[bool, str | None, str | None]:
     """
     Return (is_alert, severity, reason) for one event.
 
@@ -35,11 +34,7 @@ def _evaluate(event: dict) -> tuple[bool, Optional[str], Optional[str]]:
         # value is people; we need capacity to compute %
         from app.models.campus import CAMPUS_LAYOUT
 
-        capacity = (
-            CAMPUS_LAYOUT.get(event["building"], {})
-            .get("capacity", {})
-            .get(event["room"])
-        )
+        capacity = CAMPUS_LAYOUT.get(event["building"], {}).get("capacity", {}).get(event["room"])
         if not capacity:
             return False, None, None
         pct = value / capacity
@@ -102,8 +97,8 @@ def _evaluate(event: dict) -> tuple[bool, Optional[str], Optional[str]]:
 
 
 def list_alerts(
-    building: Optional[str] = None,
-    severity: Optional[str] = None,
+    building: str | None = None,
+    severity: str | None = None,
     limit: int = 100,
 ) -> dict:
     """
@@ -143,6 +138,6 @@ def list_alerts(
         "count": len(ordered),
         "critical_count": len(criticals),
         "warning_count": len(warnings),
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "items": ordered[:limit],
     }

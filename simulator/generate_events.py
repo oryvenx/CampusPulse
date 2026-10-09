@@ -1,15 +1,14 @@
-import os
 import argparse
 import json
+import os
 import random
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
 from app.models.campus import CAMPUS_LAYOUT, THRESHOLDS
-
 
 API_URL_DEFAULT = "http://localhost:8000/events"
 SENSOR_API_KEY = os.environ.get("SENSOR_API_KEY", "")
@@ -19,7 +18,7 @@ SENSOR_API_KEY = os.environ.get("SENSOR_API_KEY", "")
 
 def _gen_occupancy(room: str, capacity: int) -> tuple[float, str, str]:
     # Use time of day to make occupancy realistic
-    hour = datetime.now(timezone.utc).hour
+    hour = datetime.now(UTC).hour
     base_pct = 0.7 if 8 <= hour <= 18 else 0.1
     pct = max(0.0, min(1.3, random.gauss(base_pct, 0.25)))
     value = round(capacity * pct)
@@ -109,7 +108,7 @@ def build_event() -> dict:
         "value": value,
         "unit": unit,
         "severity": severity,
-        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     }
 
 
@@ -165,9 +164,7 @@ def main() -> None:
         default=API_URL_DEFAULT,
         help=f"API endpoint (default {API_URL_DEFAULT})",
     )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Print events without sending"
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Print events without sending")
     args = parser.parse_args()
 
     run(args.count, args.loop, args.url, args.dry_run)

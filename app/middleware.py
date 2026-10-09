@@ -9,7 +9,6 @@ from starlette.requests import Request
 
 from app.logging_config import get_logger, new_request_id, set_request_id
 
-
 log = get_logger("access")
 
 
