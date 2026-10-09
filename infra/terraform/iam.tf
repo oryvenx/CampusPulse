@@ -217,7 +217,22 @@ data "aws_iam_policy_document" "gha_deployer" {
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project_name}/*",
     ]
   }
+
+  statement {
+    sid    = "DynamoDBTestWrite"
+    effect = "Allow"
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+    ]
+    resources = [
+      aws_dynamodb_table.events.arn,
+      "${aws_dynamodb_table.events.arn}/index/*",
+    ]
+  }
 }
+
 
 resource "aws_iam_policy" "gha_deployer" {
   name   = "${var.project_name}-gha-deployer-policy"
