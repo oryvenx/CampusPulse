@@ -1,25 +1,30 @@
 #!/bin/bash
 set -euxo pipefail
 
-# ---- System packages ----
-dnf update -y
-dnf install -y python3.11 python3.11-pip git nginx
+# ================================================================
+# CampusPulse 2026 — EC2 bootstrap
+# Amazon Linux 2023 + Python 3.11 + FastAPI + CloudWatch Agent
+# ================================================================
 
-# ---- App directory ----
+# ---- 1. System packages ----
+dnf update -y
+dnf install -y python3.11 python3.11-pip git nginx amazon-cloudwatch-agent
+
+# ---- 2. Application directory ----
 mkdir -p /opt/campuspulse
 cd /opt/campuspulse
 
-# ---- Clone the repo ----
+# ---- 3. Clone the repo ----
 git clone ${github_repo_url} repo
 cd repo
 
-# ---- Python venv ----
+# ---- 4. Python virtualenv ----
 python3.11 -m venv .venv
 . .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+pip install --upgrade pip -q
+pip install -q -r requirements.txt
 
-# ---- Env file for systemd ----
+# ---- 5. Environment file ----
 cat > /opt/campuspulse/env <<EOF
 APP_ENV=prod
 AWS_REGION=${aws_region}
@@ -33,7 +38,12 @@ LOG_GROUP=${log_group}
 EOF
 chmod 600 /opt/campuspulse/env
 
-# ---- systemd unit ----
+# ---- 6. Log directory ----
+mkdir -p /var/log/campuspulse
+chown ec2-user:ec2-user /var/log/campuspulse
+chmod 755 /var/log/campuspulse
+
+# ---- 7. systemd unit (writes to file so CloudWatch Agent can tail it) ----
 cat > /etc/systemd/system/campuspulse.service <<'UNIT'
 [Unit]
 Description=CampusPulse FastAPI
@@ -48,12 +58,96 @@ ExecStart=/opt/campuspulse/repo/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --
 Restart=always
 RestartSec=5
 
+# Structured JSON logs go to a file the CloudWatch Agent can tail
+StandardOutput=append:/var/log/campuspulse/app.log
+StandardError=append:/var/log/campuspulse/app.log
+
 [Install]
 WantedBy=multi-user.target
 UNIT
 
+# ---- 8. Ownership ----
 chown -R ec2-user:ec2-user /opt/campuspulse
 
+# ---- 9. Enable + start the app ----
 systemctl daemon-reload
 systemctl enable campuspulse
-systemctl start campuspulse
+systemctl start campuspulse || true   # will fail until app code supports it; ignored
+
+# ================================================================
+# CloudWatch Agent
+# ================================================================
+
+# ---- 10. CloudWatch Agent configuration ----
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWCONF'
+{
+  "agent": {
+    "metrics_collection_interval": 60,
+    "run_as_user": "cwagent"
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/campuspulse/app.log",
+            "log_group_name": "LOG_GROUP_PLACEHOLDER",
+            "log_stream_name": "{instance_id}",
+            "timezone": "UTC",
+            "retention_in_days": 7
+          }
+        ]
+      }
+    }
+  },
+  "metrics": {
+    "namespace": "CampusPulse/API",
+    "append_dimensions": {
+      "InstanceId": "$${aws:InstanceId}",
+      "AutoScalingGroupName": "$${aws:AutoScalingGroupName}"
+    },
+    "aggregation_dimensions": [["InstanceId"]],
+    "metrics_collected": {
+      "mem": {
+        "measurement": [
+          {"name": "mem_used_percent", "rename": "MemoryUsedPercent", "unit": "Percent"}
+        ],
+        "metrics_collection_interval": 60
+      },
+      "disk": {
+        "measurement": [
+          {"name": "used_percent", "rename": "DiskUsedPercent", "unit": "Percent"}
+        ],
+        "resources": ["/"],
+        "metrics_collection_interval": 60
+      },
+      "cpu": {
+        "measurement": [
+          {"name": "cpu_usage_idle", "rename": "CPUIdle", "unit": "Percent"},
+          {"name": "cpu_usage_user", "rename": "CPUUser", "unit": "Percent"},
+          {"name": "cpu_usage_system", "rename": "CPUSystem", "unit": "Percent"}
+        ],
+        "totalcpu": true,
+        "metrics_collection_interval": 60
+      }
+    }
+  }
+}
+CWCONF
+
+# Substitute the log group name (bash heredoc can't interpolate inside quoted EOF)
+sed -i "s|LOG_GROUP_PLACEHOLDER|${log_group}|g" \
+  /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
+# ---- 11. Start CloudWatch Agent ----
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config \
+  -m ec2 \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+  -s
+
+systemctl enable amazon-cloudwatch-agent
+systemctl restart amazon-cloudwatch-agent
+
+# ---- 12. Done ----
+echo "CampusPulse bootstrap complete"

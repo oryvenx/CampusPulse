@@ -36,14 +36,18 @@ data "aws_iam_policy_document" "ec2_permissions" {
   }
 
   statement {
-    sid    = "CloudWatchLogs"
+    sid    = "CloudWatchLogsFull"
     effect = "Allow"
     actions = [
+      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:PutLogEvents",
       "logs:DescribeLogStreams",
     ]
-    resources = ["${aws_cloudwatch_log_group.api.arn}:*"]
+    resources = [
+      aws_cloudwatch_log_group.api.arn,
+      "${aws_cloudwatch_log_group.api.arn}:*",
+    ]
   }
 
   statement {
@@ -51,6 +55,16 @@ data "aws_iam_policy_document" "ec2_permissions" {
     effect    = "Allow"
     actions   = ["cloudwatch:PutMetricData"]
     resources = ["*"]
+  }
+
+  statement {
+    sid    = "CloudWatchAgentSSM"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+    ]
+    resources = ["arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*"]
   }
 
   statement {
