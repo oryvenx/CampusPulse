@@ -40,3 +40,19 @@ output "cloudfront_distribution_id" {
 output "cloudfront_url" {
   value = "https://${aws_cloudfront_distribution.frontend.domain_name}"
 }
+
+output "gha_deployer_access_key_id" {
+  value       = aws_iam_access_key.gha_deployer.id
+  description = "Access key ID for GitHub Actions (put in repo secret AWS_ACCESS_KEY_ID)"
+}
+
+output "gha_deployer_secret_access_key" {
+  value       = aws_iam_access_key.gha_deployer.secret
+  sensitive   = true
+  description = "Secret access key for GitHub Actions (put in repo secret AWS_SECRET_ACCESS_KEY)"
+}
+
+output "ec2_instance_id" {
+  value       = aws_instance.api.id
+  description = "EC2 instance ID (target of SSM Run Command)"
+}
