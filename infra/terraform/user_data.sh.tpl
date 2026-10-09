@@ -18,6 +18,8 @@ cd /opt/campuspulse
 git clone ${github_repo_url} repo
 cd repo
 
+chmod +x scripts/*.sh 2>/dev/null || true
+
 # ---- 4. Python virtualenv ----
 python3.11 -m venv .venv
 . .venv/bin/activate
