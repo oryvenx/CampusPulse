@@ -28,6 +28,9 @@ fi
 
 KEY="${EC2_KEY:-$HOME/.ssh/campuspulse-key.pem}"
 
+# Remove stale host key (EC2 may have been replaced by Terraform)
+ssh-keygen -R "$EC2_HOST" >/dev/null 2>&1 || true
+
 echo "▶ Deploying to ec2-user@${EC2_HOST} using key ${KEY}"
 echo
 
@@ -44,6 +47,37 @@ echo "── pip install ──"
 . .venv/bin/activate
 pip install --upgrade pip -q
 pip install -q -r requirements.txt
+
+echo "── refresh env from SSM ──"
+sudo bash -c '
+set -euo pipefail
+REGION=$(grep ^AWS_REGION= /opt/campuspulse/env | cut -d= -f2)
+PROJECT=campuspulse
+
+fetch_ssm() {
+  aws ssm get-parameter \
+    --region "$REGION" \
+    --name "$1" \
+    --with-decryption \
+    --query "Parameter.Value" \
+    --output text
+}
+
+SENSOR_KEY=$(fetch_ssm "/$PROJECT/sensor_api_key")
+POOL_ID=$(fetch_ssm "/$PROJECT/cognito_user_pool_id")
+CLIENT_ID=$(fetch_ssm "/$PROJECT/cognito_client_id")
+
+grep -vE "^SENSOR_API_KEY=|^COGNITO_USER_POOL_ID=|^COGNITO_CLIENT_ID=" /opt/campuspulse/env > /tmp/env.new
+{
+  echo "SENSOR_API_KEY=$SENSOR_KEY"
+  echo "COGNITO_USER_POOL_ID=$POOL_ID"
+  echo "COGNITO_CLIENT_ID=$CLIENT_ID"
+} >> /tmp/env.new
+
+mv /tmp/env.new /opt/campuspulse/env
+chmod 600 /opt/campuspulse/env
+chown root:root /opt/campuspulse/env
+'
 
 echo "── restart service ──"
 sudo systemctl restart campuspulse
