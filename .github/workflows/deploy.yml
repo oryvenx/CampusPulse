@@ -62,13 +62,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ env.AWS_REGION }}
 
+      # Self-healing: resolve the current EC2 instance ID from SSM instead
+      # of relying on a static GitHub secret. Survives EC2 replacements.
+      - name: Resolve EC2 instance ID from SSM
+        id: instance
+        run: |
+          set -euo pipefail
+          INSTANCE_ID=$(aws ssm get-parameter \
+            --region "$AWS_REGION" \
+            --name "/campuspulse/ec2_instance_id" \
+            --query 'Parameter.Value' --output text)
+          echo "id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
+          echo "Target instance: $INSTANCE_ID"
+
       - name: Send SSM Run Command
         id: send
         run: |
           set -euo pipefail
           CMD_ID=$(aws ssm send-command \
             --region "$AWS_REGION" \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --instance-ids "${{ steps.instance.outputs.id }}" \
             --document-name "AWS-RunShellScript" \
             --comment "CI deploy ${{ github.sha }}" \
             --parameters 'commands=["sudo -u ec2-user bash /opt/campuspulse/repo/scripts/deploy_ec2.sh"]' \
@@ -80,8 +93,9 @@ jobs:
         run: |
           set -euo pipefail
           CMD_ID="${{ steps.send.outputs.command_id }}"
-          INSTANCE="${{ secrets.EC2_INSTANCE_ID }}"
+          INSTANCE="${{ steps.instance.outputs.id }}"
 
+          STATUS="Pending"
           for i in $(seq 1 60); do
             STATUS=$(aws ssm get-command-invocation \
               --region "$AWS_REGION" \
@@ -89,27 +103,40 @@ jobs:
               --instance-id "$INSTANCE" \
               --query 'Status' --output text 2>/dev/null || echo "Pending")
 
-            echo "  [$i] status=$STATUS"
+            echo "  [$i/60] status=$STATUS"
             case "$STATUS" in
-              Success)  echo "✅ deploy succeeded"; break ;;
-              Failed|Cancelled|TimedOut)
-                echo "❌ deploy failed"
+              Success)
+                echo "✅ deploy succeeded"
+                # Print deploy output for visibility
                 aws ssm get-command-invocation \
                   --region "$AWS_REGION" \
                   --command-id "$CMD_ID" \
                   --instance-id "$INSTANCE" \
-                  --query '{Std:StandardOutputContent,Err:StandardErrorContent}' \
-                  --output text
+                  --query 'StandardOutputContent' --output text
+                exit 0
+                ;;
+              Failed|Cancelled|TimedOut)
+                echo "❌ deploy failed with status=$STATUS"
+                echo "── stdout ──"
+                aws ssm get-command-invocation \
+                  --region "$AWS_REGION" \
+                  --command-id "$CMD_ID" \
+                  --instance-id "$INSTANCE" \
+                  --query 'StandardOutputContent' --output text
+                echo "── stderr ──"
+                aws ssm get-command-invocation \
+                  --region "$AWS_REGION" \
+                  --command-id "$CMD_ID" \
+                  --instance-id "$INSTANCE" \
+                  --query 'StandardErrorContent' --output text
                 exit 1
                 ;;
             esac
             sleep 10
           done
 
-          if [ "$STATUS" != "Success" ]; then
-            echo "❌ SSM command did not reach Success within 10 minutes"
-            exit 1
-          fi
+          echo "❌ SSM command did not reach Success within 10 minutes (last status: $STATUS)"
+          exit 1
 
   # ----------------------------------------------------------------
   # Job 3: Deploy frontend to S3 + invalidate CloudFront

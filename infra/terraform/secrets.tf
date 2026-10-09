@@ -40,3 +40,12 @@ resource "aws_ssm_parameter" "cognito_region" {
 
   tags = { Name = "${var.project_name}-cognito-region" }
 }
+
+resource "aws_ssm_parameter" "ec2_instance_id" {
+  name        = "/${var.project_name}/ec2_instance_id"
+  description = "Current EC2 instance ID — used by CI SSM Run Command target"
+  type        = "String"
+  value       = aws_instance.api.id
+
+  tags = { Name = "${var.project_name}-ec2-instance-id" }
+}
