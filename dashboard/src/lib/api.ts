@@ -22,10 +22,7 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch<T>(
-  path: string,
-  opts: RequestInit = {},
-): Promise<T> {
+export async function apiFetch<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const headers = new Headers(opts.headers);
   if (!headers.has("Content-Type") && opts.body) {
     headers.set("Content-Type", "application/json");
