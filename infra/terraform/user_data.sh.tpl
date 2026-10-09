@@ -102,38 +102,37 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWCON
       }
     }
   },
-  "metrics": {
-    "namespace": "CampusPulse/API",
-    "append_dimensions": {
-      "InstanceId": "$${aws:InstanceId}",
-      "AutoScalingGroupName": "$${aws:AutoScalingGroupName}"
-    },
-    "aggregation_dimensions": [["InstanceId"]],
-    "metrics_collected": {
-      "mem": {
-        "measurement": [
-          {"name": "mem_used_percent", "rename": "MemoryUsedPercent", "unit": "Percent"}
-        ],
-        "metrics_collection_interval": 60
-      },
-      "disk": {
-        "measurement": [
-          {"name": "used_percent", "rename": "DiskUsedPercent", "unit": "Percent"}
-        ],
-        "resources": ["/"],
-        "metrics_collection_interval": 60
-      },
-      "cpu": {
-        "measurement": [
-          {"name": "cpu_usage_idle", "rename": "CPUIdle", "unit": "Percent"},
-          {"name": "cpu_usage_user", "rename": "CPUUser", "unit": "Percent"},
-          {"name": "cpu_usage_system", "rename": "CPUSystem", "unit": "Percent"}
-        ],
-        "totalcpu": true,
-        "metrics_collection_interval": 60
-      }
+    "metrics": {
+        "namespace": "CampusPulse/API",
+        "append_dimensions": {
+            "InstanceId": "$${aws:InstanceId}"
+        },
+        "aggregation_dimensions": [["InstanceId"]],
+        "metrics_collected": {
+            "mem": {
+            "measurement": [
+                {"name": "mem_used_percent", "unit": "Percent"}
+            ],
+            "metrics_collection_interval": 60
+            },
+            "disk": {
+            "measurement": [
+                {"name": "used_percent", "unit": "Percent"}
+            ],
+            "resources": ["/"],
+            "metrics_collection_interval": 60
+            },
+            "cpu": {
+            "measurement": [
+                {"name": "cpu_usage_idle", "unit": "Percent"},
+                {"name": "cpu_usage_user", "unit": "Percent"},
+                {"name": "cpu_usage_system", "unit": "Percent"}
+            ],
+            "totalcpu": true,
+            "metrics_collection_interval": 60
+            }
+        }
     }
-  }
 }
 CWCONF
 
