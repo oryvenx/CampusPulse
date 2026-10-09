@@ -96,12 +96,6 @@ export function Login() {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-xs text-muted-foreground border-t border-white/10 pt-4">
-            <div className="font-medium mb-1">Demo accounts</div>
-            <div className="font-mono">staff1@campuspulse.local / Staff#2026Pass</div>
-            <div className="font-mono">student1@campuspulse.local / Student#2026Pass</div>
-          </div>
         </CardContent>
       </Card>
     </div>
