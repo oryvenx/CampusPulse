@@ -5,7 +5,7 @@ Authentication service — Amazon Cognito.
 from __future__ import annotations
 
 import time
-from typing import Any, Optional
+from typing import Any
 
 import boto3
 import httpx
@@ -14,7 +14,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.config import settings
-
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -32,18 +31,16 @@ def login(username: str, password: str) -> dict:
             AuthFlow="USER_PASSWORD_AUTH",
             AuthParameters={"USERNAME": username, "PASSWORD": password},
         )
-    except client.exceptions.NotAuthorizedException:
+    except (
+        client.exceptions.NotAuthorizedException,
+        client.exceptions.UserNotFoundException,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
-        )
-    except client.exceptions.UserNotFoundException:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
-        )
+        ) from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cognito error: {e}")
+        raise HTTPException(status_code=500, detail=f"Cognito error: {e}") from e
 
     auth = resp["AuthenticationResult"]
 
@@ -80,10 +77,7 @@ def _jwks_url() -> str:
 
 def _get_jwks() -> dict:
     now = time.time()
-    if (
-        _JWKS_CACHE["keys"] is None
-        or now - _JWKS_CACHE["fetched_at"] > _JWKS_TTL_SECONDS
-    ):
+    if _JWKS_CACHE["keys"] is None or now - _JWKS_CACHE["fetched_at"] > _JWKS_TTL_SECONDS:
         with httpx.Client(timeout=5.0) as c:
             r = c.get(_jwks_url())
             r.raise_for_status()
@@ -108,11 +102,11 @@ def verify_token(token: str) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {e}",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 def current_user(
-    creds: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> dict:
     """Require a valid bearer token; return decoded claims."""
     if creds is None:

@@ -1,16 +1,25 @@
 """
 Central configuration.
 
-In production (EC2), values are read from the environment variables set by
-the systemd unit. In dev/test, missing secrets are auto-fetched from SSM
+In production (EC2), values are read from environment variables set by the
+systemd unit. In dev/test, missing secrets are auto-fetched from SSM
 Parameter Store using the developer's AWS credentials.
 """
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolve .env relative to the repo root regardless of cwd
+REPO_ROOT = Path(__file__).resolve().parent.parent
+ENV_FILE = REPO_ROOT / ".env"
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE) if ENV_FILE.exists() else None,
+        extra="ignore",
+    )
 
     app_env: str = "prod"
     aws_region: str = "eu-west-3"
@@ -27,11 +36,7 @@ class Settings(BaseSettings):
     log_group: str = "/campuspulse/api"
 
     def model_post_init(self, __context) -> None:
-        """
-        If SENSOR_API_KEY is not provided via env, fetch it from SSM.
-        Uses the same path as production, so no code branches on environment.
-        Silently no-ops if SSM is unreachable — the sensor path just fails auth.
-        """
+        """If SENSOR_API_KEY is not provided via env, fetch it from SSM."""
         if self.sensor_api_key:
             return
         try:

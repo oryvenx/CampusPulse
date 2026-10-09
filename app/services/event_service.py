@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 from boto3.dynamodb.conditions import Key
 
@@ -34,7 +34,7 @@ def _from_decimal(obj: Any) -> Any:
 
 def store_event(payload: EventCreate) -> CampusEvent:
     """Validate, normalize, and persist an event. Returns the stored event."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     event_id = payload.event_id or f"evt-2026-{uuid.uuid4().hex[:8]}"
     ts = payload.timestamp or now
 
@@ -59,9 +59,9 @@ def store_event(payload: EventCreate) -> CampusEvent:
 
 
 def list_events(
-    building: Optional[str] = None,
-    event_type: Optional[str] = None,
-    severity: Optional[str] = None,
+    building: str | None = None,
+    event_type: str | None = None,
+    severity: str | None = None,
     limit: int = 50,
 ) -> list[dict]:
     """Return most recent events, optionally filtered."""
@@ -117,7 +117,7 @@ def get_stats() -> dict:
         if e["severity"] in ("warning", "critical"):
             bucket["alerts"] += 1
 
-    for b, bucket in by_building.items():
+    for bucket in by_building.values():
         r = bucket["occupancy_readings"]
         bucket["occupancy_avg"] = round(bucket["occupancy_total"] / r, 1) if r else 0
         bucket["energy_total_kwh"] = round(bucket["energy_total_kwh"], 2)
@@ -125,5 +125,5 @@ def get_stats() -> dict:
     return {
         "total_events": len(items),
         "buildings": by_building,
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     }

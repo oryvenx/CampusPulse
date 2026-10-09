@@ -2,8 +2,6 @@
 /events, /stats — protected.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials
 
@@ -15,8 +13,8 @@ router = APIRouter(tags=["events"])
 
 
 def _sensor_or_staff(
-    x_sensor_api_key: Optional[str] = Header(default=None, alias="X-Sensor-Api-Key"),
-    creds: Optional[HTTPAuthorizationCredentials] = Depends(auth_service.bearer_scheme),
+    x_sensor_api_key: str | None = Header(default=None, alias="X-Sensor-Api-Key"),
+    creds: HTTPAuthorizationCredentials | None = Depends(auth_service.bearer_scheme),
 ) -> dict:
     """
     POST /events accepts EITHER:
@@ -24,11 +22,7 @@ def _sensor_or_staff(
       - Bearer token whose cognito:groups includes 'staff' (staff UI).
     """
     # Path 1: sensor API key
-    if (
-        x_sensor_api_key
-        and settings.sensor_api_key
-        and x_sensor_api_key == settings.sensor_api_key
-    ):
+    if x_sensor_api_key and settings.sensor_api_key and x_sensor_api_key == settings.sensor_api_key:
         return {"sub": "sensor", "cognito:groups": ["staff"]}
 
     # Path 2: staff JWT
@@ -60,14 +54,14 @@ def create_event(
     try:
         return event_service.store_event(payload)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/events")
 def get_events(
-    building: Optional[str] = Query(None),
-    event_type: Optional[str] = Query(None),
-    severity: Optional[str] = Query(None),
+    building: str | None = Query(None),
+    event_type: str | None = Query(None),
+    severity: str | None = Query(None),
     limit: int = Query(50, ge=1, le=500),
     _user: dict = Depends(auth_service.current_user),
 ) -> dict:
