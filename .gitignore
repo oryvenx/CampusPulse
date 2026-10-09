@@ -35,3 +35,11 @@ infra/terraform/*.tfvars
 infra/terraform/*.tfplan
 infra/terraform/tfplan
 infra/terraform/tfplan.*
+
+# Terraform bootstrap (state stays local, bucket is separate)
+infra/terraform-bootstrap/.terraform/
+infra/terraform-bootstrap/.terraform.lock.hcl
+infra/terraform-bootstrap/terraform.tfstate
+infra/terraform-bootstrap/terraform.tfstate.backup
+infra/terraform-bootstrap/*.tfplan
+infra/terraform-bootstrap/tfplan*

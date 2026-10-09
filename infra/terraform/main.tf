@@ -1,5 +1,14 @@
 terraform {
   required_version = ">= 1.7.0"
+
+  backend "s3" {
+    bucket         = "campuspulse-tfstate-5e26c4b7" # ← paste your bucket from Step 2
+    key            = "campuspulse/terraform.tfstate"
+    region         = "eu-west-3"
+    dynamodb_table = "campuspulse-tfstate-lock"
+    encrypt        = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"

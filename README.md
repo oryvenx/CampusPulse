@@ -656,6 +656,59 @@ aws ssm describe-parameters \
   --query 'Parameters[?starts_with(Name, `/campuspulse/`)].{Name:Name,Type:Type}' \
   --output table
 ```
+---
+
+## 14. Disaster recovery
+
+### Controls
+
+- **Infrastructure as code** — the entire stack is defined in `infra/terraform/` and can be rebuilt with `terraform apply`
+- **Remote state** — Terraform state is stored in S3 with DynamoDB locking, versioning, and encryption
+- **DynamoDB point-in-time recovery** — enabled on both tables, 35-day continuous window
+- **Stable endpoints** — Elastic IP and CloudFront URL do not change across backend redeploys
+- **Secrets in SSM Parameter Store** — KMS-encrypted `SecureString`, re-applied by Terraform
+- **Self-healing CI/CD** — the deploy workflow resolves the current EC2 instance ID from SSM at runtime
+
+### Recovery procedures
+
+**EC2 lost or corrupted**
+
+```bash
+cd infra/terraform
+terraform apply -replace=aws_instance.api -auto-approve
+ssh-keygen -R "$(terraform output -raw api_public_ip)"
+```
+
+**DynamoDB data accidentally deleted**
+
+```bash
+aws dynamodb restore-table-to-point-in-time \
+  --source-table-name campuspulse-events \
+  --target-table-name campuspulse-events-restored \
+  --restore-date-time <ISO-8601-timestamp> \
+  --region eu-west-3
+```
+
+Then update `EVENTS_TABLE` in `/opt/campuspulse/env` on the EC2 and restart the `campuspulse` service.
+
+**Full rebuild from scratch**
+
+```bash
+git clone https://github.com/oryvenx/CampusPulse.git
+cd CampusPulse/infra/terraform
+terraform init
+terraform apply -auto-approve
+cd ../..
+./scripts/bootstrap_cognito_users.sh "$(cd infra/terraform && terraform output -raw cognito_user_pool_id)"
+./scripts/deploy_app.sh
+./scripts/deploy_frontend.sh
+```
+
+### Limitations
+
+- Single-region deployment — no automated multi-region failover
+- Cognito passwords cannot be restored after a user pool re-creation; users must reset them
+- CloudWatch log retention is 7 days; older logs are not archived
 
 ---
 
