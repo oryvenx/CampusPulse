@@ -23,8 +23,8 @@ resource "aws_dynamodb_table" "events" {
     projection_type = "ALL"
   }
 
-  point_in_time_recovery { enabled = false } # free tier: keep off (costs)
-  server_side_encryption { enabled = true }  # AWS-managed KMS key (free)
+  point_in_time_recovery { enabled = true } # free tier: keep off (costs)
+  server_side_encryption { enabled = true } # AWS-managed KMS key (free)
 }
 
 resource "aws_dynamodb_table" "users" {
@@ -38,4 +38,8 @@ resource "aws_dynamodb_table" "users" {
   }
 
   server_side_encryption { enabled = true }
+
+  point_in_time_recovery {
+    enabled = true
+  }
 }
